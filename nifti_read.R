@@ -15,78 +15,8 @@ n2 <- readNIfTI(target_image)
 
 # Is it in type nifti-1?
 n2
-n3 <- n2
 
 
-?magic
-magic(n2)
-magic(ffd)
-
-magic(n3)
-magic(n3) <- 0
-vox_units(object = n3)
-?vox_units
-vox.offset(n3)
-vox.offset(object = n3) <- 1296
-vox.offset(n3)
-image(n3)
-
-vox.offset(ffd)
-voxdim(n3)
-n2
-dim(n3)
-qoffset.x(n3)
-qoffset.y(n3)
-dim(ffd)
-qoffset.x(ffd)
-qoffset.y(ffd)
-qoffset.y(n3)<-0
-image(n3)
-image(n2)
-
-slotNames(ffd)
-slotNames(n3)
-pixdim(n3)
-slice_start(n3)
-slice_start(ffd)
-slice_start(n3) <- 10
-image(n3)
-
-
-# NIfTI sform ---------------------------
-sform(object = n3, srow.y = c(0,0,0,0))
-#sform(n3) <- sform(ffd)
-sform(n3)
-sform(ffd)
-srow_x(n3) <- c(0,0,0,0)
-srow_y(n3) <- c(0,0,0,0)
-srow_z(n3) <- c(0,0,0,0)
-image(n3)
-
-# dropImageDimensions ---------------------------
-nim <- nifti(array(rnorm(10^3), dim = rep(10, 3)))
-nim2 <- nifti(array(rnorm(10^3), dim = c(10, 10, 1, 10)))
-image(nim)
-dropImageDimension(nim2)
-nim1 <- dropImageDimension(nim2, onlylast = FALSE)
-image(nim1)
-nim3 <- nifti(array(rnorm(10^3), dim = c(10, 10, 10, 1)))
-nim1 <- dropImageDimension(nim3)
-nim1 <- dropImageDimension(nim3, onlylast = FALSE) # the same as above
-
-
-nim4 <- nifti(array(rnorm(10^3), dim = c(10, 10, 10, 1, 10)))
-nim4
-dim(nim4[,,,1,])
-dim(nim4[,,,1,,drop=TRUE])
-dropImageDimension(nim4)
-
-nim5 <- nifti(array(rnorm(10^4), dim = c(1, 10, 10, 10, 1, 10)))
-dropImageDimension(nim5)
-dropImageDimension(nim5, onlylast = FALSE)
-
-nim6 <- nifti(array(rnorm(10^3), dim = c(1, 10, 10, 10, 1, 1)))
-dropImageDimension(nim6)
 
 
 # Example:
@@ -119,20 +49,21 @@ n2@dim_
 n2
 
 #  we get signal.
-pixdim(out.img)[2:4] <- 4 
+#pixdim(out.img)[2:4] <- 4 
 writeNIfTI(out.img, "fakeBrain");
 in.img <- readNIfTI("fakeBrain.nii.gz", reorient=FALSE);
 image(in.img)
 dat_out <- n2@.Data
 View(head(dat_out ))
 dim(dat_out)
-View(dat_out[,,50])
+#View(dat_out[,,50])
 
 # Main screen turn on
 image(dat_out[,,100], axes = F)
 n4 <- nifti(dat_out)
 image(n4)
 
+# Display some of the z layers.
 dim(dat_out)
 for(i in 50:100)
   image(dat_out[,,i], axes = F)
@@ -161,7 +92,9 @@ two_image <- cbind(dat_out[,,50], dat_out[,,51], dat_out[,,52], dat_out[,,53])
 image(two_image)
 
 dim(dat_out)
+
 long_image <- matrix(rep(0,prod(dim(dat_out))), ncol = dim(dat_out)[2] )
+dim(long_image)
 for(i in 1:dim(dat_out)[3])
   long_image[((i-1)*dim(dat_out)[1]+1):(i*dim(dat_out)[1]),] <- dat_out[,,i]
 #access image number i
@@ -173,6 +106,8 @@ dim(dat_out)
 image_length  <- 185
 image(long_image[((i-1)*image_length+1):(i*image_length),])
 i <- 70
+
+# Mistake ---------------------------
 
 # Something is messed up below.**
 #  We seem to be shifting x.  We need to store rotated images.
@@ -193,8 +128,66 @@ image_length  <- 185
 image(long_image[((i-1)*image_length+1):(i*image_length),])
 i <- 70
 
+# Try again ---------------------------
+dim(dat_out)
+# Dimensions of the images: 185 rows by 180 columns by default
+long_image <- matrix(rep(0,prod(dim(dat_out))), nrow = dim(dat_out)[1] )
+dim(long_image)
+# For each of the z images,
+for(i in 1:dim(dat_out)[3])
+  long_image[ , ((i-1)*dim(dat_out)[2]+1):(i*dim(dat_out)[2])] <- dat_out[,,i]
+# Put the z image into the long image.
+#  Skulls are oreinted on their side,
+#  front to back, dim(dat_out)[2] is the length of a skull image
+#  we take the start as i-1 (start at 0) +1
+#  the end of the first image is 1 * length of skull
+# Use selected columns, all rows.
+
+#access image number i
+i <- 70
+# An image displays at a 90 degree rotation to the matrix. 
+# (the image is a 90 degree counter clockwise view of the matrix)
+image(long_image[ , ((i-1)*dim(dat_out)[2]+1):(i*dim(dat_out)[2])])
+# So far so good, it's one long vector.  we can slice it differently.
+dim(dat_out)
+dim(long_image)
+#  dim(dat_out)[1]  # the previous value we'd been using. (185)
+image_length  <- 180
+image(long_image[ , ((i-1)*image_length+1):(i*image_length)])
+# Good, nothing changed!
+image_length  <- 185
+image(long_image[ , ((i-1)*image_length+1):(i*image_length)])
+# try image i
+i <- 15
+
+#im_offset <- 180 * 13
+
+# Magic: 193, *192*, 191
+for(i in 14:50){
+#i <- 14
+image_length  <- 192
+im_offset <- 0  # offsets of 35, 40 look ok.
+im_start <- ((i-1)*image_length+1) - im_offset
+im_stop <- (i*image_length) - im_offset
+length(im_start:im_stop)
+image(long_image[, im_start:im_stop])
+}
 
 
+
+for(i in 50:100)
+  image(dat_out[,,i], axes = F)
+
+
+
+im_mat <- matrix(c(1:10, 1000,1:89), nrow = 10)
+im_mat  <- matrix(1:20, ncol = 4)
+image(im_mat)
+View(im_mat)
+dim(im_mat)
+
+
+# NIfTI orthographic views ---------------------------
 
 # How does ffd differ from what I have?
 ffd
