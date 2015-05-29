@@ -3,6 +3,7 @@
 #  Tell brain_loader where to find those images.
 
 #directory <- "Z:/ST599/Project3/brain/brain_images/"
+#brains_directory <- "C:/Users/Casey/Documents/Spring 2015/ST 599/Projects/3/Brain_image"
 brains_directory <- "Z:/ST599/Project3/brain/brain_images"
 source("nifti_read.R")
 
