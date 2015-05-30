@@ -10,6 +10,11 @@ source("nifti_read.R")
 # Load the brains into a list.
 brain_list <- brain_loader(brains_directory = brains_directory)
 
+# Read in the microarray data.
+source("microarray_read.R")
+annotation_list <- micro_loader(brains_directory)
+
+
 # When we look at a brain image in R, it is actually rotated 90 degrees to counterclockwise compared to the matrix.
 # Our brains appear to point nose up, when viewed in z slices, but really the nose points right in the matrix.
 image(brain_list[[8]][ , ,99])
