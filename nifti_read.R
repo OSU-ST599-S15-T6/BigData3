@@ -68,4 +68,3 @@ brain_loader <- function(brain_names = NULL, brains_directory = NULL, gray = F){
   return(brain_list)
   
 }
-

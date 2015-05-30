@@ -12,9 +12,10 @@ brain_list <- brain_loader(brains_directory = brains_directory)
 
 # Read in the sample data.  
 source("microarray_read.R")
-sample_list <- sample_loader(brains_directory)
-# sample_list <- sample_loader(brains_directory, brain_list)
-# With luck this will run when the dimension issue is resolved.
+#sample_list <- sample_loader(brains_directory)
+sample_list <- sample_loader(brains_directory, brain_list)
+# We can now get gray values for each point.
+
 
 # read in a single rain's MA data.
 micro_1 <- micro_loader(brains_directory, i = 1)

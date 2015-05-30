@@ -68,9 +68,14 @@ read_gray <- function(local_brain, local_sample){
   
   gray_level <- rep(0,n_samples)
   coords <- local_sample[,8:10]
-    
+  
+  im_dim <- dim(local_brain)
+  trans_coords <- cbind(voxx = coords[1], 
+                        voxy = im_dim[2] - coords[3],
+                        voxz = im_dim[3] - coords[2])
+  
   for(g in 1:dim(coords)[1]){
-    gray_level[g] <- local_brain[coords[g,1],coords[g,2],coords[g,3]]
+    gray_level[g] <- local_brain[trans_coords[g,1],trans_coords[g,2],trans_coords[g,3]]
   }
   local_sample <- cbind(local_sample, gray_level)
   
