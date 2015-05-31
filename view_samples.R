@@ -4,16 +4,15 @@ local_brain <- brain_list[[1]]
 local_sample <- sample_list[[1]]
 brain_dim <- dim(local_brain)
 
-
 coords <- local_sample[,8:10]
-head(coords)
+#head(coords)
 trans_coords <- cbind(coords[1], brain_dim[2] - coords[3], brain_dim[3] - coords[2])
 names(trans_coords) <- c("local_x", "local_y", "local_z")
-head(trans_coords)
+#head(trans_coords)
 
 # Convert the transformed coordinates to display on R's plot.
 point_coords <- cbind((trans_coords[1]-1)/(brain_dim[1]-1), (trans_coords[2]-1)/(brain_dim[2]-1), (trans_coords[3]-1)/(brain_dim[3]-1))
-head(point_coords)
+#head(point_coords)
 
 #  Note: these are the transformed x,y,z unique values.
 unique_x <- sort(unique(trans_coords$local_x))
