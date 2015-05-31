@@ -70,18 +70,29 @@ sample_loader <- function(brains_directory, brain_list = NULL, is_gray = F){
 
 # function micro_loader ---------------------------
 #'
-#'  In:  directory containing brains,  which brain to read.
+#'  In:  directory containing brains,  which brain to read, Use binary data or not
 #'  Out: get the data from the 3d brain array and append it to the annotation.
 #'  
-micro_loader <- function(brains_directory, i = 1){
+micro_loader <- function(brains_directory, i = 1, binary = F){
   
   brain_folders <- list.dirs(path = brains_directory, recursive = F)
   short_dir <- list.dirs(path = brains_directory, recursive = F, full.names = F)
   # If the annotation file exists, we write it to annotation list. Else, it remains null.
-  if("MicroarrayExpression.csv" %in% list.files(brain_folders[i])){
-    ma_data <- read.csv(paste(brain_folders[i], "MicroarrayExpression.csv", sep = "/"), header = F)
-    message(paste("Reading", short_dir[i], "/ MicroarrayExpression.csv"))
+  
+  if(binary == F){
+    if("MicroarrayExpression.csv" %in% list.files(brain_folders[i])){
+      message(paste("Reading", short_dir[i], "/ MicroarrayExpression.csv"))
+      ma_data <- read.csv(paste(brain_folders[i], "MicroarrayExpression.csv", sep = "/"), header = F)
+    }
   }
+
+  if(binary == T){
+    if("PACall.csv" %in% list.files(brain_folders[i])){
+      message(paste("Reading", short_dir[i], "/ PACall.csv"))
+      ma_data <- read.csv(paste(brain_folders[i], "PACall.csv", sep = "/"), header = F)
+    }
+  }
+
   # return the micro array.
   return(ma_data)
 }

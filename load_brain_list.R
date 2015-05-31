@@ -14,5 +14,4 @@ gray_matter  <- brain_loader(brains_directory = brains_directory, gray = T)
 
 samples <- load_sample_gw(brains_directory, white_matter = white_matter, gray_matter = gray_matter)
 
-# read in a single rain's MA data.
-micro_1 <- micro_loader(brains_directory, i = 1)
+
