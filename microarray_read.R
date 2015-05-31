@@ -1,3 +1,34 @@
+# Function load_sample_gw() ---------------------------
+#' 
+#' in: brains_directory
+#' out: sample annotation, with attached gray, white values.
+#' 
+load_sample_gw <- function(brains_directory, white_matter = NULL, gray_matter = NULL){
+  source("nifti_read.R")
+  
+  # Load the brains into a list.
+  if(is.null(white_matter) == T)
+    white_matter <- brain_loader(brains_directory = brains_directory, gray = F)
+  if(is.null(gray_matter)== T)
+    gray_matter  <- brain_loader(brains_directory = brains_directory, gray = T)
+  
+  # Read in the sample data.
+  white_sample <- sample_loader(brains_directory, white_matter, is_gray = F)
+  gray_sample  <- sample_loader(brains_directory, gray_matter, is_gray = T)
+  
+  gw_sample <- vector(mode = "list", length = length(white_sample))
+  
+  for(i in 1:length(white_sample)){
+    if(is.null(white_sample[[i]])==F){
+      gw_sample[[i]] <- cbind(white_sample[[i]], gray = gray_sample[[i]]$gray)
+    }
+    
+  }
+
+  return(gw_sample)
+}
+
+
 #  Function sample_loader() ---------------------------
 #' 
 #' In:  directory containing brain folders, optional: list containing brain images
@@ -7,7 +38,7 @@
 #' If you add the argument brain_list, (a list of 3-dimensional brain imagery created by brain_loader)
 #'  we create a gray value for each sample using the brain imagery in the brain_list.
 #'  
-sample_loader <- function(brains_directory, brain_list = NULL){
+sample_loader <- function(brains_directory, brain_list = NULL, is_gray = F){
   
   # Which brains are installed?
   brain_folders <- list.dirs(path = brains_directory, recursive = F)
@@ -27,7 +58,7 @@ sample_loader <- function(brains_directory, brain_list = NULL){
       if(is.null(brain_list[[i]]) == F){
         #message("Assigning gray values.")
         annotation_list[[i]]  <- read_gray(local_brain = brain_list[[i]],
-                                           local_sample = annotation_list[[i]])
+                                           local_sample = annotation_list[[i]], is_gray)
 
       }
     }
@@ -62,7 +93,7 @@ micro_loader <- function(brains_directory, i = 1){
 #'  
 #'  At each test location, we need to decide what they gray value is.
 #'  
-read_gray <- function(local_brain, local_sample){
+read_gray <- function(local_brain, local_sample, is_gray = F){
   #  how many elements in the local sample?
   n_samples <- dim(local_sample)[1]
   
@@ -77,7 +108,13 @@ read_gray <- function(local_brain, local_sample){
   for(g in 1:dim(coords)[1]){
     gray_level[g] <- local_brain[trans_coords[g,1],trans_coords[g,2],trans_coords[g,3]]
   }
-  local_sample <- cbind(local_sample, gray_level)
+  
+  if(is_gray == F)
+    local_sample <- cbind(local_sample, white = gray_level)
+    
+  if(is_gray == T)
+    local_sample <- cbind(local_sample, gray = gray_level)
+  
   
   #  Return the modified local_sample
   return(local_sample)
