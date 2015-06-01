@@ -131,3 +131,46 @@ read_gray <- function(local_brain, local_sample, is_gray = F){
   return(local_sample)
 }
 
+
+
+# function probe_loader ---------------------------
+#'
+#'  In:  directory containing brains,  which brain to read, Use binary data or not
+#'  Out: ma_data (probes data, with or without probe annotation.)
+#'  
+probe_loader <- function(brains_directory, i = 1, binary = F, with_probes = T){
+  
+  brain_folders <- list.dirs(path = brains_directory, recursive = F)
+  short_dir <- list.dirs(path = brains_directory, recursive = F, full.names = F)
+  # If the annotation file exists, we write it to annotation list. Else, it remains null.
+  
+
+  
+  if(binary == F){
+    if("MicroarrayExpression.csv" %in% list.files(brain_folders[i])){
+      message(paste("Reading", short_dir[i], "/ MicroarrayExpression.csv"))
+      ma_data <- read.csv(paste(brain_folders[i], "MicroarrayExpression.csv", sep = "/"), header = F)
+    }
+  }
+  
+  
+  if(binary == T){
+    if("PACall.csv" %in% list.files(brain_folders[i])){
+      message(paste("Reading", short_dir[i], "/ PACall.csv"))
+      ma_data <- read.csv(paste(brain_folders[i], "PACall.csv", sep = "/"), header = F)
+    }
+  }
+  
+  if(with_probes == T){
+    if("Probes.csv" %in% list.files(brain_folders[i])){
+      message(paste("Reading", short_dir[i], "/ Probes.csv"))
+      probe_data <- read.csv(paste(brain_folders[i], "Probes.csv", sep = "/"), header = T)
+      message("Appending probe details to microarray data")
+      ma_data  <- cbind(probe_data, ma_data)
+    }
+  }
+  
+  
+  # return the micro array.
+  return(ma_data)
+}
