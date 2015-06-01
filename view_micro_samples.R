@@ -110,9 +110,66 @@ pac_join <- inner_join(x = header, y = sum_genes, by = "gene_id")
 #View(head(arrange(header, gene_id),200))
 View(head(arrange(pac_join, gene_id),200))
 
-
-
 # This allows us to see what percentage of the probes for a gene were positive at a location.
 View(head(round(pac_join[,(9:370)]/pac_join$tests, digits = 3)))
 
+# Plot by gene, by slice ---------------------------
+# This is amazing.
+# still working with brain b
+local_brain <- gray_matter[[b]]
+local_sample <- samples[[b]]
+brain_dim <- dim(local_brain)
+
+# We have to transform the voxel coordinates because the brain was stored incorectly.
+#  (This took a long time to figure out)
+coords <- local_sample[,8:10]
+trans_coords <- cbind(coords[1], brain_dim[2] - coords[3], brain_dim[3] - coords[2])
+names(trans_coords) <- c("local_x", "local_y", "local_z")
+
+# Convert the transformed coordinates to display on R's plot.
+point_coords <- cbind((trans_coords[1]-1)/(brain_dim[1]-1), (trans_coords[2]-1)/(brain_dim[2]-1), (trans_coords[3]-1)/(brain_dim[3]-1))
+
+
+# Pick a slice
+x <- 100
+
+# Pick n_genes random genes from 29180 total genes
+n_genes <- 40
+gene_sample <- sample(1:dim(pac_join)[1], size = n_genes )
+
+# This function creates colors from steel blue to white.
+colfunc <- colorRampPalette(c("steelblue", "white"))
+
+for(g in gene_sample){
+  #in_current_layer <- trans_coords$local_x == x
+  #in_and_probe_true <- in_current_layer & (target_probe[-(1:8)] == 1)
+  #in_and_probe_false <- in_current_layer & (target_probe[-(1:8)] == 0)
+  
+  # Crete color ramp for this gene. 
+  # There are up to "tests" number of tests per gene
+  # We color the points based on number of successful tests.
+  n_colors <- colfunc(as.numeric(pac_join[g,8]))
+  
+  
+  image(local_brain[x,,], main = paste("x-layer:", x, "\n  gene:", pac_join$gene_name[g]), col = grey(seq(0, 1, length = 256)), axes = F)
+
+  # Step through each gene (there's 21,000)
+  #points(x = point_coords$local_y, y = point_coords$local_z, pch = 20, col = pac_join[g,-(1:8)])
+  #points(x = point_coords$local_y, y = point_coords$local_z, pch = 20, col = as.numeric(pac_join[g,-(1:8)]/as.numeric(pac_join[g,8])))
+  #points(x = point_coords$local_y, y = point_coords$local_z, pch = 20, col = (as.numeric(pac_join[g,-(1:8)]/as.numeric(pac_join[g,8]))))
+  #points(x = point_coords$local_y, y = point_coords$local_z, pch = 20, col = (2+as.numeric(pac_join[g,-(1:8)])))
+  points(x = point_coords$local_y, y = point_coords$local_z, pch = 20, col = n_colors[as.numeric(pac_join[g,-(1:8)])])
+  #plot(1:5, 1:5, col=as.numeric(pac_join[g,9:13]+1))
+  
+  # We step through x, so we view y, z.
+  #points(x = point_coords$local_y[in_and_probe_true],  y = point_coords$local_z[in_and_probe_true],  pch = 20, col = "red")
+  #points(x = point_coords$local_y[in_and_probe_false], y = point_coords$local_z[in_and_probe_false], pch = 20, col = "blue")
+}
+# Plot gene's value at all locations (value as in # of positive tests out of total.)
+# pac_join$VN / pac_join$tests
+
+# Plot 
+#colfunc <- colorRampPalette(c("black", "white"))
+#colfunc <- colorRampPalette(c("steelblue", "white"))
+#plot(rep(1,10),col=colfunc(10),pch=19,cex=3)
 
