@@ -73,6 +73,11 @@ sample_loader <- function(brains_directory, brain_list = NULL, is_gray = F){
 #'  In:  directory containing brains,  which brain to read, Use binary data or not
 #'  Out: get the data from the 3d brain array and append it to the annotation.
 #'  
+#'  This is an older version of the microarray loader.
+#'  The newer version (probe_loader) allows you to append information about
+#'  each probe, (like its name and the gene it tests for),
+#'  as well as options for loading the binary probe results 
+#'  
 micro_loader <- function(brains_directory, i = 1, binary = F){
   
   brain_folders <- list.dirs(path = brains_directory, recursive = F)
@@ -138,6 +143,13 @@ read_gray <- function(local_brain, local_sample, is_gray = F){
 #'  In:  directory containing brains,  which brain to read, Use binary data or not
 #'  Out: ma_data (probes data, with or without probe annotation.)
 #'  
+#'  We need to read the microarray expressions from one file,
+#'  which contains the results of the probes.
+#'  This can be binary (p>0.01?) or continuous.
+#'  
+#'  Additiona information probe details exist in a seperate file.
+#'  Merge the probe details with probe results by using with_probes = T
+#'  
 probe_loader <- function(brains_directory, i = 1, binary = F, with_probes = T){
   
   brain_folders <- list.dirs(path = brains_directory, recursive = F)
@@ -165,7 +177,7 @@ probe_loader <- function(brains_directory, i = 1, binary = F, with_probes = T){
     if("Probes.csv" %in% list.files(brain_folders[i])){
       message(paste("Reading", short_dir[i], "/ Probes.csv"))
       probe_data <- read.csv(paste(brain_folders[i], "Probes.csv", sep = "/"), header = T)
-      message("Appending probe details to microarray data")
+      #message("Appending probe details to microarray data")
       ma_data  <- cbind(probe_data, ma_data)
     }
   }
@@ -173,4 +185,35 @@ probe_loader <- function(brains_directory, i = 1, binary = F, with_probes = T){
   
   # return the micro array.
   return(ma_data)
+}
+
+# function gene_loader ---------------------------
+#'
+#' In:   probes, in the format of probe_loader. (Must include 'with_probes' header information)
+#' Out:  data frame containing microarray expression summarized by gene.
+#' 
+#' With the probes for a particular brain, we summarize (sum) results by gene.
+# 
+gene_summary <- function(probes){
+  require("dplyr")
+  
+  # Weight each test ---------------------------
+  # Plan:  get a weight for each test.  By counting the number of tests per gene, 
+  #        we will know what percentage of genes are 
+  pac_df <- as.data.frame(probes)
+  
+  # Create a column with tests per gene.
+  pac_genes <- pac_df %>% group_by(gene_id) %>% mutate(V1 =  n())
+  pac_genes <- rename(pac_genes, tests = V1)
+  
+  #  after grouping by gene ID, take the sum along each column of number of the sample locations.
+  sum_genes <- pac_genes %>% group_by(gene_id) %>% select(starts_with("V")) %>% summarise_each(funs(sum))
+  
+  # Extract the header (about the gene being tested)
+  header <- pac_genes %>% group_by(gene_id) %>% select(-starts_with("V")) %>% distinct(gene_id)
+  
+  # Join header and genes.  Joining matches the tables together by gene id #
+  pac_join <- inner_join(x = header, y = sum_genes, by = "gene_id")
+  
+  return(pac_join)  
 }
