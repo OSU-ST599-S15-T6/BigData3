@@ -1,0 +1,122 @@
+## install.packages('glmnet')
+## install.packages('randomForest')
+## install.packages('data.table')
+## install.packages('dplyr')
+
+
+###run load_brain_list.R
+library(randomForest)
+library(glmnet)
+library(data.table)
+library(dplyr)
+
+## Try pulling out the predictor (gene) and response (white matter) values and storing them in RAM somewhere
+brains_directory <- "Z:/BigData3/Brains"
+
+source("nifti_read.R")
+source("microarray_read.R")
+
+## This loading both white and gray matter is legacy behavior, easier to just remove the unneeded white
+## after loading than to rewrite everything
+# Create two lists, one containing white voxel arrays and one containing gray voxel arrays
+white_matter <- brain_loader(brains_directory = brains_directory, gray = F)
+gray_matter  <- brain_loader(brains_directory = brains_directory, gray = T) 
+
+# Samples contains information about where each sample was taken,
+# 
+# [1] "structure_id"      "slab_num"          "well_id"          
+# [4] "slab_type"         "structure_acronym" "structure_name"   
+# [7] "polygon_id"        "mri_voxel_x"       "mri_voxel_y"      
+# [10] "mri_voxel_z"       "mni_x"             "mni_y"            
+# [13] "mni_z"             "white"             "gray"
+
+samples <- load_sample_gw(brains_directory, white_matter = white_matter, gray_matter = gray_matter)
+
+## Got what we need for analysis, ditch these
+rm(gray_matter); rm(white_matter); gc()
+
+## Load the predictor and response values for all the analyses
+
+## Gene information
+brain_probes<-list()
+brain_genes<-list()
+wide_genes<-list()
+
+## Standardized response
+std_intensity<-list()
+
+## Extract for last 4 brains -- ran out of memory to work with all six brains
+for(k in 3:6){
+  
+  ## load the probes/genes
+  brain_probes[[k]] <- probe_loader(brains_directory, i = k, binary = F, with_probes=T)  
+  brain_genes[[k]] <- gene_summary(brain_probes[[k]])
+  
+  ## create the list of gene names
+  if(k==3){gene_id<-as.character(brain_genes[[3]]$gene_id)}
+  
+  ## reshape the gene data
+  wide_genes[[k]]<-data.table(t(brain_genes[[k]])[-(1:8),])
+  setnames(wide_genes[[k]],gene_id)
+  
+  ## cleanup for memory saving
+  brain_probes[[k]]<-NULL
+  brain_genes[[k]]<-NULL
+  
+  gc()
+  
+  ## load and scale the voxel intensities -- scaling for comparison across brains
+  std_intensity[[k]] <- scale(samples[[k]]$white)
+}
+
+#################
+## Elastic net ##
+#################
+
+net<-list()
+cv<-list()
+sparse_coefs<-list()
+full_coefs<-list()
+
+par(mfrow=c(2,2))
+
+for(k in 3:6){
+  x<-as.matrix(wide_genes[[k]])
+  class(x)<-"numeric"
+  net[[k]]<-glmnet(x=as.matrix(x,y=as.vector(std_intensity[[k]]),alpha = 0.5)
+  cv[[k]]<-cv.glmnet(x,y=as.vector(std_intensity[[k]]))
+  sparse_coefs[[k]]<-coef(cv[[k]], s = "lambda.1se")@i
+  full_coefs[[k]]<-coef(cv[[k]], s = "lambda.min")@i
+  plot(cv[[k]], main=paste("Brain ",eval(k)))
+}
+par(mfrow = c(1,1))
+
+##################
+## Random Forest #
+##################
+
+brandfor<-list()
+imp_tab<-list()
+
+for(k in 3:6){
+  brandfor[[k]] <- randomForest(x = wide_genes[[k]], y = as.vector(std_intensity[[k]]), mtry = 1000, ntree = 500 ,importance = T)
+  imp_tab[[k]] <- data.table(brandfor[[k]]$importance[,1],gene_id)
+  setorder(imp_tab[[k]],order = -V1)
+  importance_mat[,2*k-1] <- imp_tab$"V1"
+  importance_mat[,2*k] <- imp_tab$"gene_id"
+  
+  for(j in 3:6){
+    if(j==k){
+      pred<-brandfor[[j]]$pred ## If you try to use the predict method on the original data, it overfits -- $pred uses the 
+      ## correct out-of-bag error estimates
+    } else {
+      pred <- predict(brandfor[[k]],newdata = wide_genes[[k]])
+    results[k,j] <- 1-sum((standard_j-pred)^2)/(sum(standard_j^2))
+  }
+}
+
+results
+
+
+
+
